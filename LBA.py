@@ -1,6 +1,6 @@
 
-import numpy as np 
-
+import numpy as np
+from scipy.stats import norm 
 
 def LBA(list_v, list_B, A=0.5, t0=0, s=0, rng=None):
     """ Linear Ballistic Model.
@@ -37,4 +37,50 @@ def LBA(list_v, list_B, A=0.5, t0=0, s=0, rng=None):
 
     return choice, RT
 
-    
+def pdf_LBA_accumulator(t,v, b, A, s):
+    """ PDF for the time taken for LBA accumualtors to reach threshold
+    Arguments:
+        - t: time variable
+        - v: drift rate (could be either a single value or an array)
+        - b: decision threshold (could be either a single value or an array)
+        - A: upper bound of uniform distribution of starting point (single value)
+        - s: between-trial noise of drift rate (single value)
+    Returns: 
+    """
+
+    f = (1/A)*( -v*norm.cdf((b-A-t*v)/(t*s)) + s*norm.pdf((b-A-t*v)/(t*s)) + v*norm.cdf((b-t*v)/(t*s)) - s*norm.pdf((b-t*v)/(t*s)) )
+
+    return f
+
+def cdf_LBA_accumulator(t,v, b, A, s):
+    """ CDF for the time taken for LBA accumualtors to reach threshold
+    Arguments:
+        - t: time variable
+        - v: drift rate (could be either a single value or an array)
+        - b: decision threshold (could be either a single value or an array)
+        - A: upper bound of uniform distribution of starting point (single value)
+        - s: between-trial noise of drift rate (single value)
+    Returns: 
+    """
+    F = 1 + ((b-A-t*v)/A)*norm.cdf((b-A-t*v)/(t*s)) - ((b-t*v)/A)*norm.cdf((b-t*v)/(t*s)) + \
+        ((t*s)/A)*norm.pdf((b-A-t*v)/(t*s)) - ((t*s)/A)*norm.pdf((b-t*v)/(t*s))
+    return F
+
+def defective_pdf_LBA(t,list_v,b,A,s, ref=0):
+    """ defective PDF of response times for the LBA accumulators.
+    Arguments:
+        - t: time variable
+        - list_v: a list (or array) of drift rates. Need at least two accumulators (two drift rates)
+        - b: decision threshold (could be either a single value or an array)
+        - A: upper bound of uniform distribution of starting point (single value)
+        - s: between-trial noise of drift rate (single value)
+    Returns:
+    """
+
+    list_v = np.asarray(list_v)
+    v_ref = list_v[ref]
+    v_rest = np.delete(v_ref, ref)
+
+    dPDF = pdf_LBA_accumulator(t,v_ref,s,b,A)*(1-cdf_LBA_accumulator(t,v_rest,s,b,A))
+
+    return(dPDF)
