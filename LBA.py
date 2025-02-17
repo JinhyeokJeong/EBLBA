@@ -46,6 +46,7 @@ def pdf_LBA_accumulator(t,v, b, A, s):
         - A: upper bound of uniform distribution of starting point (single value)
         - s: between-trial noise of drift rate (single value)
     Returns: 
+        - f: pdf of LBA accumulator(s)
     """
 
     f = (1/A)*( -v*norm.cdf((b-A-t*v)/(t*s)) + s*norm.pdf((b-A-t*v)/(t*s)) + v*norm.cdf((b-t*v)/(t*s)) - s*norm.pdf((b-t*v)/(t*s)) )
@@ -61,6 +62,7 @@ def cdf_LBA_accumulator(t,v, b, A, s):
         - A: upper bound of uniform distribution of starting point (single value)
         - s: between-trial noise of drift rate (single value)
     Returns: 
+        - F: cdf of LBA accumulator(s)
     """
     F = 1 + ((b-A-t*v)/A)*norm.cdf((b-A-t*v)/(t*s)) - ((b-t*v)/A)*norm.cdf((b-t*v)/(t*s)) + \
         ((t*s)/A)*norm.pdf((b-A-t*v)/(t*s)) - ((t*s)/A)*norm.pdf((b-t*v)/(t*s))
@@ -75,12 +77,13 @@ def defective_pdf_LBA(t,list_v,b,A,s, ref=0):
         - A: upper bound of uniform distribution of starting point (single value)
         - s: between-trial noise of drift rate (single value)
     Returns:
+        - dpdf: defective pdf of i-th (determined by ref) LBA accumulator
     """
 
     list_v = np.asarray(list_v)
     v_ref = list_v[ref]
     v_rest = np.delete(v_ref, ref)
 
-    dPDF = pdf_LBA_accumulator(t,v_ref,s,b,A)*(1-cdf_LBA_accumulator(t,v_rest,s,b,A))
+    dpdf = pdf_LBA_accumulator(t,v_ref,s,b,A)*(1-cdf_LBA_accumulator(t,v_rest,s,b,A))
 
-    return(dPDF)
+    return(dpdf)
