@@ -82,7 +82,7 @@ def defective_pdf_LBA(t,list_v,b,A,s, ref=0):
 
     list_v = np.asarray(list_v)
     v_ref = list_v[ref]
-    v_rest = np.delete(v_ref, ref)
+    v_rest = np.delete(list_v, ref)
 
     dpdf = pdf_LBA_accumulator(t,v_ref,s,b,A)*(1-cdf_LBA_accumulator(t,v_rest,s,b,A))
 
