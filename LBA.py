@@ -1,6 +1,7 @@
 
 import numpy as np
 from scipy.stats import norm 
+import scipy.integrate as integrate
 
 def LBA(list_v, list_B, A=0.5, t0=0, s=0, rng=None):
     """ Linear Ballistic Model.
@@ -84,6 +85,49 @@ def defective_pdf_LBA(t,list_v,b,A,s, ref=0):
     v_ref = list_v[ref]
     v_rest = np.delete(list_v, ref)
 
-    dpdf = pdf_LBA_accumulator(t,v_ref,s,b,A)*(1-cdf_LBA_accumulator(t,v_rest,s,b,A))
+    # TODO: test if I can use a list of B values (i.e., different thresholds across accumulators)
+    p_ref = pdf_LBA_accumulator(t=t,v=v_ref,b=b,A=A,s=s) # f_{ref(t)}
+    p_rest = [(1-cdf_LBA_accumulator(t=t,v=v_rest,b=b,A=A,s=s))] #\prod_{j\neq i}{1-F_j}
+    p_rest = np.prod(np.vstack(p_rest),axis=0)
+
+    dpdf = p_ref * p_rest # pdf_LBA_accumulator(t=t,v=v_ref,b=b,A=A,s=s)*(1-cdf_LBA_accumulator(t=t,v=v_rest,b=b,A=A,s=s))
 
     return(dpdf)
+
+def dcdf_from_dpdf(t, dpdf_values):
+    """ Approximate the defective CDF values from the discrete defective pdf values. Assumes that x values are wide enough to capture the entire shape of pdf.    
+    Note that the last value of dcdf would be equal to the choice probability of choosing the corresponding choice.
+    Arguments:
+        - t: array of x-values 
+        - dpdf_values: array of defective PDF values 
+    Returns:
+        - dcdf_values: array of corresponding defective CDF values
+    """
+
+    dx = np.diff(t)[0] # assume that differences between time points are uniform
+    dcdf = np.cumsum(dpdf_values * dx)
+
+    return dcdf 
+
+def cdf_from_pdf(x_values, pdf_values):
+    """ Approximate the CDF values from the discrete pdf values. Assumes that x values are wide enough to capture the entire shape of pdf.    
+    Arguments:
+        - x_values: array of x-values 
+        - pdf_values: array of PDF values 
+    Returns:
+        - cdf_values: array of corresponding CDF values
+    """
+
+    # ensure x values are sorted 
+    idx_sorted = np.argsort(x_values)
+    x_sorted = np.array(x_values)[idx_sorted]
+    pdf_sorted = np.array(pdf_values)[idx_sorted]
+
+    # compute the cumulative values for integral (using trapezoidal rule)
+    dx = np.diff(x_sorted)
+    cdf_values = np.cumsum(pdf_sorted[:-1]*dx) 
+    cdf_values /= cdf_values[-1]
+
+    cdf_values = np.instert(cdf_values, 0, 0)
+
+    return cdf_values 
