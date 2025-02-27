@@ -3,8 +3,8 @@ import numpy as np
 from scipy.stats import norm 
 import scipy.integrate as integrate
 
-def LBA(list_v, list_B, A=0.5, t0=0, s=0, rng=None):
-    """ Linear Ballistic Model.
+def simulate_LBA(list_v, list_B, A=0.5, t0=0, s=0, rng=None):
+    """ Linear Ballistic Accumulator Model.
     This function simulates a single LBA process (choice and RT) given the parameters.
     Note that this function does not use a closed form solution. 
     Arguments:
@@ -86,8 +86,9 @@ def defective_pdf_LBA(t,list_v,b,A,s, ref=0):
     v_rest = np.delete(list_v, ref)
 
     # TODO: test if I can use a list of B values (i.e., different thresholds across accumulators)
+    # need generalization to N alternative situation
     p_ref = pdf_LBA_accumulator(t=t,v=v_ref,b=b,A=A,s=s) # f_{ref(t)}
-    p_rest = [(1-cdf_LBA_accumulator(t=t,v=v_rest,b=b,A=A,s=s))] #\prod_{j\neq i}{1-F_j}
+    p_rest = [(1-cdf_LBA_accumulator(t=t,v=v,b=b,A=A,s=s)) for v in v_rest] #\prod_{j\neq i}{1-F_j}
     p_rest = np.prod(np.vstack(p_rest),axis=0)
 
     dpdf = p_ref * p_rest # pdf_LBA_accumulator(t=t,v=v_ref,b=b,A=A,s=s)*(1-cdf_LBA_accumulator(t=t,v=v_rest,b=b,A=A,s=s))
@@ -131,3 +132,19 @@ def cdf_from_pdf(x_values, pdf_values):
     cdf_values = np.instert(cdf_values, 0, 0)
 
     return cdf_values 
+
+# TODO: make a function to generate predictions of LBA given analytical solutions
+# def LBA(list_v, list_B, A=0.5, t0=0, s=0, rng=None):
+#     """ Linear Ballistic Accumulator Model.
+#     This function simulates a single LBA process (choice and RT) given the parameters.
+#     Note that this function does not use a closed form solution. 
+#     Arguments:
+#         - list_v: drift rate (len(list_v)=number of choice alternatives)
+#         - list_B: decision thresholds (positive values)
+#         - A: upper bound of uniform distribution of starting point (k ~ U[0,A])
+#         - t0: non-decision time
+#         - s: between-trial noise of drift rate (SD of Gaussian distribution)
+#         - rng: random number generator from numpy.random module
+#     Returns:
+#         - (choice, rt)
+#     """
